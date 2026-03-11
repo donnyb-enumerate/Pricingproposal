@@ -391,4 +391,112 @@ function PricingInput({label,listTotal,value,onChange,discount,listBase,listDoor
       </div>
       <div style={{background:isEnterprise?"rgba(27,42,74,0.8)":"rgba(255,255,255,0.05)",border:"1px solid "+(isEnterprise?"rgba(58,107,197,0.3)":"rgba(208,215,227,0.15)"),borderRadius:12,padding:"20px 24px"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:16}}>
-          <span st
+          <span style={{fontSize:18,fontWeight:700,color:"#fff"}}>{label}</span>
+          <div style={{textAlign:"right"}}>
+            {hd?<><span style={{textDecoration:"line-through",color:"#4A5B75",fontSize:14,marginRight:8}}>${listTotal}</span><span style={{fontSize:24,fontWeight:800,color:"#27AE60"}}>${cv}</span><span style={{fontSize:12,color:"#6B7B95"}}>/mo</span></>
+            :<><span style={{fontSize:24,fontWeight:800,color:"#fff"}}>${cv}</span><span style={{fontSize:12,color:"#6B7B95"}}>/mo</span></>}
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px",borderTop:"1px solid rgba(58,107,197,0.15)",paddingTop:14}}>
+          {features.map(f=><div key={f.name} style={{display:"flex",alignItems:"center",gap:6,fontSize:12}}><span style={{color:isEnterprise?"#3A6BC5":"#27AE60",fontWeight:700}}>{String.fromCharCode(10003)}</span><span style={{color:"#A0B4D0"}}>{f.name}</span></div>)}
+          {entOnly.map(f=><div key={f.name} style={{display:"flex",alignItems:"center",gap:6,fontSize:12}}>
+            {isEnterprise?<><span style={{color:"#F0C040",fontWeight:700}}>{String.fromCharCode(10003)}</span><span style={{color:"#F0C040",fontWeight:600}}>{f.name}</span></>
+            :<><span style={{color:"#3A4F6F"}}>--</span><span style={{color:"#3A4F6F"}}>{f.name}</span></>}
+          </div>)}
+        </div>
+        <div style={{borderTop:"1px solid rgba(58,107,197,0.15)",marginTop:14,paddingTop:12,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <span style={{fontSize:12,color:"#6B7B95"}}>Onboarding</span>
+          {waived?<div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{textDecoration:"line-through",color:"#4A5B75",fontSize:13}}>${onboarding.toLocaleString()}</span>
+            <span style={{background:"rgba(39,174,96,0.15)",color:"#27AE60",padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:700}}>WAIVED</span>
+          </div>:<span style={{fontSize:14,fontWeight:700,color:"#fff"}}>${onboarding.toLocaleString()}</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function App(){
+  const[accountName,setAccountName]=useState("");
+  const[repName,setRepName]=useState("");
+  const[doors,setDoors]=useState(175);
+  const[growthPrice,setGrowthPrice]=useState("");
+  const[enterprisePrice,setEnterprisePrice]=useState("");
+  const[waiveOnboarding,setWaiveOnboarding]=useState(true);
+  const[generating,setGenerating]=useState(false);
+  const[activeTab,setActiveTab]=useState("growth");
+
+  const gList=LIST_PRICES.growth.base+LIST_PRICES.growth.perDoor*doors;
+  const eList=LIST_PRICES.enterprise.base+LIST_PRICES.enterprise.perDoor*doors;
+  const gP=growthPrice===""?gList:Number(growthPrice);
+  const eP=enterprisePrice===""?eList:Number(enterprisePrice);
+  const gD=gP<gList?Math.round((1-gP/gList)*100):0;
+  const eD=eP<eList?Math.round((1-eP/eList)*100):0;
+  const ok=accountName.trim()&&repName.trim()&&gP>0&&eP>0;
+
+  const go=useCallback(async()=>{
+    setGenerating(true);
+    try{ await generatePDF({accountName:accountName.trim(),repName:repName.trim(),doors,growthPrice:gP,enterprisePrice:eP,waiveOnboarding}); }
+    catch(e){ console.error(e); alert("PDF generation failed: "+e.message); }
+    setGenerating(false);
+  },[accountName,repName,doors,gP,eP,waiveOnboarding]);
+
+  return(
+    <div style={{minHeight:"100vh",background:"linear-gradient(135deg, #0F1D35 0%, #1B2A4A 40%, #223558 100%)",fontFamily:"'Segoe UI', system-ui, -apple-system, sans-serif",color:"#E8EDF5"}}>
+      <div style={{padding:"28px 36px",borderBottom:"1px solid rgba(58,107,197,0.25)",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <span style={{fontSize:22,fontWeight:800,letterSpacing:1.5,color:"#fff"}}>ENUMERATE</span>
+          <svg width="22" height="26" viewBox="0 0 22 26"><circle cx="5" cy="5" r="3" fill="#82B4E0"/><circle cx="14" cy="5" r="3" fill="#82B4E0"/><circle cx="5" cy="14" r="3" fill="#3A6BC5"/><circle cx="14" cy="14" r="3" fill="#3A6BC5"/><circle cx="9.5" cy="23" r="3" fill="#2E5090"/><circle cx="18.5" cy="23" r="3" fill="#2E5090"/></svg>
+        </div>
+        <span style={{fontSize:13,color:"#6B7B95",letterSpacing:0.5}}>Proposal Generator</span>
+      </div>
+      <div style={{maxWidth:880,margin:"0 auto",padding:"32px 24px 60px"}}>
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(58,107,197,0.2)",borderRadius:16,padding:"32px 36px",marginBottom:28,backdropFilter:"blur(10px)"}}>
+          <h2 style={{margin:"0 0 24px",fontSize:20,fontWeight:700,color:"#fff"}}>Deal Configuration</h2>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"20px 28px"}}>
+            <div><label style={labelStyle}>Account Name *</label><input style={inputStyle} value={accountName} onChange={e=>setAccountName(e.target.value)} placeholder="e.g. Playa de Oro"/></div>
+            <div><label style={labelStyle}>Sales Rep Name *</label><input style={inputStyle} value={repName} onChange={e=>setRepName(e.target.value)} placeholder="e.g. Grant"/></div>
+            <div><label style={labelStyle}>Number of Doors</label><input style={inputStyle} type="number" value={doors} onChange={e=>setDoors(Math.max(1,Number(e.target.value)||1))} min={1}/></div>
+            <div style={{display:"flex",alignItems:"flex-end",paddingBottom:4}}>
+              <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",fontSize:14,color:"#A0B4D0"}}>
+                <div onClick={()=>setWaiveOnboarding(!waiveOnboarding)} style={{width:44,height:24,borderRadius:12,background:waiveOnboarding?"#3A6BC5":"#2A3F65",position:"relative",transition:"background 0.2s",cursor:"pointer"}}>
+                  <div style={{width:18,height:18,borderRadius:9,background:"#fff",position:"absolute",top:3,left:waiveOnboarding?23:3,transition:"left 0.2s"}}/>
+                </div>Waive Onboarding Fee
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(58,107,197,0.2)",borderRadius:16,padding:"32px 36px",marginBottom:28}}>
+          <h2 style={{margin:"0 0 6px",fontSize:20,fontWeight:700,color:"#fff"}}>Package Pricing</h2>
+          <p style={{margin:"0 0 24px",fontSize:13,color:"#6B7B95"}}>Enter custom monthly totals. If below list price, the PDF will show the discount visually.</p>
+          <div style={{display:"flex",gap:0,marginBottom:24}}>
+            {["growth","enterprise"].map(tab=>(
+              <button key={tab} onClick={()=>setActiveTab(tab)} style={{flex:1,padding:"12px 0",background:activeTab===tab?"rgba(58,107,197,0.2)":"transparent",border:"1px solid",borderColor:activeTab===tab?"rgba(58,107,197,0.5)":"rgba(58,107,197,0.15)",borderRadius:tab==="growth"?"10px 0 0 10px":"0 10px 10px 0",color:activeTab===tab?"#fff":"#6B7B95",fontSize:14,fontWeight:activeTab===tab?700:500,cursor:"pointer",transition:"all 0.2s"}}>
+                {tab==="growth"?"Growth":"Enterprise"}
+              </button>
+            ))}
+          </div>
+          {activeTab==="growth"
+            ?<PricingInput label="Growth" listTotal={gList} value={growthPrice} onChange={setGrowthPrice} discount={gD} listBase={LIST_PRICES.growth.base} listDoor={LIST_PRICES.growth.perDoor} doors={doors} onboarding={LIST_PRICES.growth.onboarding} waived={waiveOnboarding} features={GROWTH_FEATURES} entOnly={ENTERPRISE_ONLY} isEnterprise={false}/>
+            :<PricingInput label="Enterprise" listTotal={eList} value={enterprisePrice} onChange={setEnterprisePrice} discount={eD} listBase={LIST_PRICES.enterprise.base} listDoor={LIST_PRICES.enterprise.perDoor} doors={doors} onboarding={LIST_PRICES.enterprise.onboarding} waived={waiveOnboarding} features={GROWTH_FEATURES} entOnly={ENTERPRISE_ONLY} isEnterprise={true}/>
+          }
+        </div>
+
+        <button onClick={go} disabled={!ok||generating} style={{width:"100%",padding:"18px 0",background:ok&&!generating?"linear-gradient(135deg, #3A6BC5, #2E5090)":"#2A3F65",border:"none",borderRadius:12,color:ok?"#fff":"#4A5B75",fontSize:16,fontWeight:700,cursor:ok&&!generating?"pointer":"not-allowed",letterSpacing:0.5,transition:"all 0.3s",boxShadow:ok?"0 4px 20px rgba(58,107,197,0.3)":"none"}}>
+          {generating?<span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10}}><span className="spinner"/>Generating PDF...</span>:"Generate Proposal PDF"}
+        </button>
+        {!ok&&<p style={{textAlign:"center",fontSize:12,color:"#4A5B75",marginTop:10}}>Fill in account name and rep name to enable generation.</p>}
+      </div>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+        input:focus{border-color:rgba(58,107,197,0.6)!important;box-shadow:0 0 0 3px rgba(58,107,197,0.15)}
+        input::placeholder{color:#3A4F6F}
+        button:hover:not(:disabled){filter:brightness(1.1)}
+        input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+        input[type=number]{-moz-appearance:textfield}
+      `}</style>
+    </div>
+  );
+}
